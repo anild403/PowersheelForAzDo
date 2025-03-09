@@ -1,0 +1,26 @@
+# Define your Azure DevOps project and repository details
+$projectName = "YourProjectName"
+$repositoryName = "YourRepositoryName"
+
+# Specify the date range for analysis (e.g., from 2020 to 2023)
+$startDate = Get-Date "2020-01-01"
+$endDate = Get-Date "2023-12-31"
+
+# Initialize counters for lines of code added
+$linesAdded = @{}
+
+# Get all changesets within the specified date range
+$changesets = Get-TfsItemHistory -Server "https://your-azure-devops-url" -Path "$/YourProjectName/$/YourRepositoryName" -Recurse -Version "D$($startDate.ToString("yyyy-MM-dd"))~D$($endDate.ToString("yyyy-MM-dd"))"
+
+# Process each changeset
+foreach ($changeset in $changesets) {
+    $changesetDate = $changeset.CreationDate.Date
+    $linesAdded[$changesetDate] += $changeset.Changes | Where-Object { $_.ChangeType -eq "Add" } | ForEach-Object { $_.Lines.Length }
+}
+
+# Display the results
+$linesAdded.GetEnumerator() | Sort-Object Name | ForEach-Object {
+    $year = $_.Key.Year
+    $lines = $_.Value
+    Write-Host "Year $year: $lines lines added"
+}
